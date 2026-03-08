@@ -1,0 +1,78 @@
+# otto-voice configuration
+# CLI args override these values
+
+audio:
+  device: null          # null = system default mic
+  sample_rate: 16000
+  block_size: 512       # 32ms at 16kHz, matches Silero VAD window
+  gain: 1.0
+
+vad:
+  threshold: 0.5
+  silence_duration_ms: 700
+  min_speech_duration_ms: 250
+  speech_pad_ms: 250
+
+stt:
+  model: auto           # auto, tiny, base, small, medium, large-v3
+  device: auto          # auto, cpu, cuda
+  compute_type: auto    # auto, int8, float16, float32
+  language: en
+  beam_size: 5
+  cpu_threads: 0        # 0 = auto
+
+outputs:
+  - console
+
+output_settings:
+  file:
+    path: transcriptions.txt
+    mode: append
+  clipboard:
+    paste: true
+    paste_delay_ms: 50
+    auto_send: true
+    auto_send_delay_ms: 2000
+  websocket:
+    host: localhost
+    port: 8765
+  otto_api:
+    url: http://otto-core-01:8080
+    timeout: 60
+    return_audio: true
+    voice: default
+    provider: ollama
+
+compose:
+  enabled: false
+  auto_send_delay_ms: 8000
+  llm_cleanup: true
+
+llm:
+  enabled: false
+  provider: ollama
+  ollama:
+    base_url: http://localhost:11434
+    model: llama3.2
+  claude:
+    base_url: http://localhost:3000
+    model: claude-sonnet-4-20250514
+
+tts:
+  enabled: true
+  voice: en-IE-EmilyNeural   # edge-tts voice (use `edge-tts --list-voices`)
+  rate: "+0%"                 # speed adjustment (e.g. "+10%", "-20%")
+  volume: "+0%"               # volume adjustment
+
+listening:
+  mode: continuous      # continuous or wake_word
+  wake_word:
+    model: models/wake_word/computer.onnx   # built-in name or path to ONNX
+    threshold: 0.5
+    timeout_seconds: 60
+    feedback_beep: true
+
+transmission:
+  mode: sync            # sync or async
+  async_callback_host: "0.0.0.0"
+  async_callback_port: 8766
