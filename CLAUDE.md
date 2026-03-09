@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-otto-voice is a real-time voice client for the Otto ecosystem. It captures audio, detects speech (Silero VAD), transcribes (faster-whisper), and routes text through configurable output handlers. Supports TTS responses (edge-tts) with barge-in, wake word detection (OpenWakeWord), and compose mode for buffering multi-utterance inputs.
+otto-coms is a real-time voice client for the Otto ecosystem. It captures audio, detects speech (Silero VAD), transcribes (faster-whisper), and routes text through configurable output handlers. Supports TTS responses (edge-tts) with barge-in, wake word detection (OpenWakeWord), and compose mode for buffering multi-utterance inputs.
 
-Deployed to **otto-coms-01** (192.168.86.210) at `/opt/otto/otto-voice/`.
+Deployed to **otto-coms-01** (192.168.86.210) at `/opt/otto/otto-coms/`.
 
 ## Commands
 
@@ -18,8 +18,8 @@ pip install -e ".[all]"
 # Run
 ./run.sh --outputs console clipboard
 ./run.sh --outputs otto-api --compose
-otto-voice --list-devices          # show audio input devices
-otto-voice -v --outputs console    # verbose/debug mode
+otto-coms --list-devices          # show audio input devices
+otto-coms -v --outputs console    # verbose/debug mode
 
 # Test
 pytest -v

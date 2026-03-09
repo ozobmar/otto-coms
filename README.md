@@ -1,4 +1,4 @@
-# otto-voice
+# otto-coms
 
 Unified cross-platform voice client for Otto — STT, TTS, wake word, compose mode.
 
@@ -47,7 +47,7 @@ Copy `config.default.yaml` to `config.yaml` and edit. CLI args override config v
 
 ## API Contract
 
-otto-voice communicates with otto-core via HTTP:
+otto-coms communicates with otto-core via HTTP:
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
@@ -57,4 +57,4 @@ otto-voice communicates with otto-core via HTTP:
 
 ## Deployment
 
-Deployed to **otto-coms-01** (192.168.86.210) at `/opt/otto/otto-voice/`.
+Deployed to **otto-coms-01** (192.168.86.210) at `/opt/otto/otto-coms/`.

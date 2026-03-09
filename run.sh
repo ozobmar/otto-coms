@@ -10,4 +10,4 @@ else
     source "$SCRIPT_DIR/.venv/bin/activate"
 fi
 
-otto-voice "$@"
+otto-coms "$@"

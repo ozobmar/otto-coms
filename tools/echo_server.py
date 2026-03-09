@@ -6,7 +6,7 @@ The /text-prompt endpoint echoes back whatever text is sent to it.
 Usage:
     python tools/echo_server.py [--port 8080] [--host 0.0.0.0]
 
-Then point otto-voice at it:
+Then point otto-coms at it:
     ./run.sh --device 1 --outputs console clipboard otto-api --compose \
         --otto-url http://localhost:8080
 """
@@ -42,7 +42,7 @@ class ExecutionStats(BaseModel):
 
 class TextPromptRequest(BaseModel):
     prompt: str | None = None
-    text: str | None = None  # otto-voice handler sends "text" instead of "prompt"
+    text: str | None = None  # otto-coms handler sends "text" instead of "prompt"
     provider: str | None = None
     space: str | None = None
     locale: str | None = None
