@@ -13,6 +13,27 @@ from otto_coms.config import STTConfig
 logger = logging.getLogger(__name__)
 
 
+_HALLUCINATION_PHRASES = {
+    "thanks for watching",
+    "thank you for watching",
+    "thank you",
+    "see you in the next video",
+    "subscribe",
+    "like and subscribe",
+    "please subscribe",
+    "bye",
+}
+
+
+def _filter_hallucinations(text: str) -> str:
+    """Remove known Whisper hallucination phrases."""
+    lowered = text.lower().rstrip(".!?,")
+    if lowered in _HALLUCINATION_PHRASES:
+        logger.debug("Filtered hallucination: %s", text)
+        return ""
+    return text
+
+
 class STTEngine:
     """Wrapper around faster-whisper for transcription."""
 
@@ -76,6 +97,7 @@ class STTEngine:
             texts.append(seg.text.strip())
 
         text = " ".join(texts).strip()
+        text = _filter_hallucinations(text)
         elapsed = time.monotonic() - t0
 
         if text:
