@@ -61,7 +61,7 @@ llm:
 tts:
   enabled: true
   voice: en-IE-EmilyNeural   # edge-tts voice (use `edge-tts --list-voices`)
-  rate: "+0%"                 # speed adjustment (e.g. "+10%", "-20%")
+  rate: "+30%"                # speed adjustment (e.g. "+10%", "-20%")
   volume: "+0%"               # volume adjustment
 
 listening:
