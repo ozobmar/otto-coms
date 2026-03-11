@@ -78,6 +78,15 @@ class WakeWordDetector:
 
         prediction = self._model.predict(audio_int16)
 
+        # Temporary: log every 100th call to confirm detect() is running
+        if not hasattr(self, '_call_count'):
+            self._call_count = 0
+        self._call_count += 1
+        if self._call_count % 100 == 1:
+            max_score = max(prediction.values()) if prediction else 0
+            logger.info("Wake word detect call #%d, max_score=%.4f, chunk_rms=%.4f",
+                        self._call_count, max_score, float(np.sqrt(np.mean(audio_chunk**2))))
+
         for model_name, score in prediction.items():
             if score > 0.01:
                 logger.info("Wake word score: %s=%.3f (threshold=%.2f)",
