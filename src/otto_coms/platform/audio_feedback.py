@@ -13,9 +13,19 @@ from otto_coms.platform import IS_WINDOWS
 logger = logging.getLogger(__name__)
 
 
-def _generate_tone(frequency: float, duration_ms: int, volume: float = 0.3) -> np.ndarray:
-    """Generate a sine wave tone as float32 numpy array at 16kHz."""
-    sample_rate = 16000
+def _get_output_sample_rate() -> int:
+    """Get the default output device's native sample rate."""
+    try:
+        import sounddevice as sd
+        device_info = sd.query_devices(sd.default.device[1], kind="output")
+        return int(device_info["default_samplerate"])
+    except Exception:
+        return 48000
+
+
+def _generate_tone(frequency: float, duration_ms: int, volume: float = 0.3,
+                   sample_rate: int = 48000) -> np.ndarray:
+    """Generate a sine wave tone as float32 numpy array."""
     n_samples = int(sample_rate * duration_ms / 1000)
     t = np.arange(n_samples, dtype=np.float32) / sample_rate
     tone = (volume * np.sin(2.0 * math.pi * frequency * t)).astype(np.float32)
@@ -35,8 +45,9 @@ def _play_tone(frequency: float, duration_ms: int) -> None:
     # Cross-platform fallback: use sounddevice
     try:
         import sounddevice as sd
-        tone = _generate_tone(frequency, duration_ms)
-        sd.play(tone, samplerate=16000, blocking=True)
+        rate = _get_output_sample_rate()
+        tone = _generate_tone(frequency, duration_ms, sample_rate=rate)
+        sd.play(tone, samplerate=rate, blocking=True)
     except Exception as e:
         logger.debug("Could not play tone: %s", e)
 

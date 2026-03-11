@@ -214,8 +214,15 @@ class TTSEngine:
             try:
                 sd.play(audio_float, samplerate=samplerate, blocking=False)
             except sd.PortAudioError:
-                logger.warning("Playback failed at %d Hz, retrying at 24000 Hz", samplerate)
-                samplerate = 24000
+                # Resample to the output device's native rate
+                device_info = sd.query_devices(sd.default.device[1], kind="output")
+                native_rate = int(device_info["default_samplerate"])
+                logger.warning("Playback failed at %d Hz, resampling to %d Hz", samplerate, native_rate)
+                ratio = native_rate / samplerate
+                n_out = int(len(audio_float) * ratio)
+                indices = np.arange(n_out) / ratio
+                audio_float = np.interp(indices, np.arange(len(audio_float)), audio_float).astype(np.float32)
+                samplerate = native_rate
                 sd.play(audio_float, samplerate=samplerate, blocking=False)
 
             # Wait for playback to finish, checking for barge-in every 50ms
