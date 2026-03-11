@@ -47,8 +47,20 @@ async def run_pipeline(config: Config) -> None:
     # Set default audio device for all sounddevice calls (capture, TTS, beeps)
     if config.audio.device is not None:
         import sounddevice as sd
-        sd.default.device = (config.audio.device, config.audio.device)
-        logger.info("Audio device set to %s (input + output)", config.audio.device)
+        # Resolve string device names to index for sd.default.device
+        dev = config.audio.device
+        if isinstance(dev, str):
+            try:
+                info = sd.query_devices(dev)
+                dev = info["index"]
+                logger.info("Resolved audio device '%s' to index %d", config.audio.device, dev)
+            except ValueError:
+                logger.error("Audio device '%s' not found", config.audio.device)
+                dev = None
+        if dev is not None:
+            sd.default.device = (dev, dev)
+            dev_name = sd.query_devices(dev)["name"]
+            logger.info("Audio device set to %d: %s (input + output)", dev, dev_name)
 
     # Initialise components
     audio_queue: asyncio.Queue[np.ndarray] = asyncio.Queue(maxsize=500)
