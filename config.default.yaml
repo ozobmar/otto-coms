@@ -6,6 +6,7 @@ audio:
   sample_rate: 16000
   block_size: 512       # 32ms at 16kHz, matches Silero VAD window
   gain: 1.0
+  reconnect_timeout_s: 5.0  # seconds without audio before attempting device reconnect
 
 vad:
   threshold: 0.5
@@ -67,7 +68,7 @@ tts:
 listening:
   mode: continuous      # continuous or wake_word
   wake_word:
-    model: models/wake_word/computer.onnx   # built-in name or path to ONNX
+    model: models/wake_word/computer.onnx   # built-in name or path to ONNX file
     threshold: 0.5
     timeout_seconds: 60
     feedback_beep: true

@@ -27,6 +27,23 @@ from otto_coms.tts.engine import TTSEngine
 logger = logging.getLogger(__name__)
 
 
+def _resolve_audio_device(config_device: int | str | None) -> int | None:
+    """Resolve a device name/index to an integer index, or None on failure."""
+    import sounddevice as sd
+    if config_device is None:
+        return None
+    dev = config_device
+    if isinstance(dev, str):
+        try:
+            info = sd.query_devices(dev)
+            dev = info["index"]
+            logger.info("Resolved audio device '%s' to index %d", config_device, dev)
+        except ValueError:
+            logger.error("Audio device '%s' not found", config_device)
+            return None
+    return dev
+
+
 class PipelineState:
     """Mutable state shared across the pipeline."""
 
@@ -36,6 +53,8 @@ class PipelineState:
         self.wake_active: bool = False  # wake word detected, actively listening
         self.wake_last_speech: float = 0.0  # monotonic time of last speech in wake mode
         self.tts_barge_in: bool = False  # set when barge-in interrupts TTS
+        self.device_status: str = "connected"  # connected / disconnected / reconnecting
+        self.last_chunk_time: float = 0.0  # monotonic time of last audio chunk
 
 
 async def run_pipeline(config: Config) -> None:
@@ -47,16 +66,7 @@ async def run_pipeline(config: Config) -> None:
     # Set default audio device for all sounddevice calls (capture, TTS, beeps)
     if config.audio.device is not None:
         import sounddevice as sd
-        # Resolve string device names to index for sd.default.device
-        dev = config.audio.device
-        if isinstance(dev, str):
-            try:
-                info = sd.query_devices(dev)
-                dev = info["index"]
-                logger.info("Resolved audio device '%s' to index %d", config.audio.device, dev)
-            except ValueError:
-                logger.error("Audio device '%s' not found", config.audio.device)
-                dev = None
+        dev = _resolve_audio_device(config.audio.device)
         if dev is not None:
             sd.default.device = (dev, dev)
             dev_name = sd.query_devices(dev)["name"]
@@ -170,6 +180,7 @@ async def run_pipeline(config: Config) -> None:
 
     # Start audio capture
     await capture.start()
+    state.last_chunk_time = time.monotonic()
     logger.info("Pipeline running (%s mode). Ctrl+C to stop.", state.listening_mode)
     logger.info("Shift+L to pause/resume listening")
 
@@ -177,9 +188,45 @@ async def run_pipeline(config: Config) -> None:
 
     try:
         while True:
+            # --- Device reconnect polling ---
+            if state.device_status in ("disconnected", "reconnecting"):
+                state.device_status = "reconnecting"
+                try:
+                    dev = _resolve_audio_device(config.audio.device)
+                    if dev is not None:
+                        import sounddevice as sd
+                        sd.default.device = (dev, dev)
+                        await capture.start()
+                        state.device_status = "connected"
+                        state.last_chunk_time = time.monotonic()
+                        vad.reset()
+                        logger.info("Audio device reconnected")
+                        print("[AUDIO] Device reconnected")
+                    else:
+                        await asyncio.sleep(2.0)
+                        continue
+                except Exception:
+                    state.device_status = "disconnected"
+                    await asyncio.sleep(2.0)
+                    continue
+
             try:
                 chunk = await asyncio.wait_for(audio_queue.get(), timeout=0.1)
             except asyncio.TimeoutError:
+                # Check for device disconnect
+                if (state.device_status == "connected"
+                        and state.last_chunk_time > 0
+                        and time.monotonic() - state.last_chunk_time
+                        > config.audio.reconnect_timeout_s):
+                    state.device_status = "disconnected"
+                    logger.warning("Audio device lost — no audio for %.0fs",
+                                   config.audio.reconnect_timeout_s)
+                    print("[AUDIO] Device lost — attempting reconnect...")
+                    try:
+                        await capture.stop()
+                    except Exception:
+                        pass
+
                 # Check wake word timeout
                 if (state.listening_mode == "wake_word"
                         and state.wake_active
@@ -190,6 +237,8 @@ async def run_pipeline(config: Config) -> None:
                     logger.info("Wake word timeout — returning to listening")
                     print("[WAKE] Timeout — listening for wake word...")
                 continue
+
+            state.last_chunk_time = time.monotonic()
 
             # Barge-in: when TTS is playing, detect speech and interrupt
             if tts_engine is not None and tts_engine.is_playing:

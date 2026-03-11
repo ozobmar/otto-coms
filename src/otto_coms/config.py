@@ -17,6 +17,7 @@ class AudioConfig:
     sample_rate: int = 16000
     block_size: int = 512
     gain: float = 1.0
+    reconnect_timeout_s: float = 5.0  # seconds without audio before assuming device lost
 
 
 @dataclass
@@ -113,7 +114,7 @@ class ComposeConfig:
 
 @dataclass
 class WakeWordConfig:
-    model: str = "hey_jarvis"
+    model: str = "models/wake_word/computer.onnx"  # built-in name or path to ONNX file
     threshold: float = 0.5
     timeout_seconds: int = 60
     feedback_beep: bool = True
